@@ -4,8 +4,16 @@
 void ofApp::setup(){
 	ofSetVerticalSync(true);
 	ofSetLogLevel(OF_LOG_VERBOSE);
+	auto ports = serial::list_ports();
+	for (auto p: ports) {
+		cout<<"PORT : "<<p.port << endl;
+		cout << "PORT        : " << p.port << endl;
+		cout << "HardwareID  : " << p.hardware_id << endl;
+		cout << "Description : " << p.description << endl;
+	}
 
-    printer.open("/dev/tty.PL2303-00002014");
+	cout << "portOpen : " << printer.open("COM3") << endl;	// ex) on Windows
+	printer.setSetFlowcontrol(serial::flowcontrol_software);
     
     img.loadImage("logo.jpg");
     video.initGrabber(640, 480);

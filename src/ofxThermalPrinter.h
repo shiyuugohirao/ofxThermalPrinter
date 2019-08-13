@@ -14,13 +14,19 @@
 #pragma once
 
 #include "ofMain.h"
-#include "serial.h"
+#include "serial/serial.h"
 
 // Though most of these printers are factory configured for 19200 baud
 // operation, a few rare specimens instead work at 9600.  If so, change
 // this constant.  This will NOT make printing slower!  The physical
 // print and feed mechanisms are the limiting factor, not the port speed.
-#define BAUDRATE  19200
+//#define BAUDRATE  19200
+
+// Default BAUDRATE is 19200 or 9600, 
+// you can download update_firmware.zip https://learn.adafruit.com/mini-thermal-receipt-printer/downloads
+// and set upper BAUDRATE(115200) to speed up with AClasTool.exe
+// if you set 115200, you must setFlowcontrol(serial::)
+#define BAUDRATE 115200
 
 // Number of microseconds to issue one byte to the printer.  11 bits
 // (not 8) to accommodate idle, start and stop bits.  Idle time might
@@ -80,8 +86,6 @@ enum BarcodeType {
     MSI
 };
 
-typedef std::shared_ptr<serial::Serial> SharedSerial;
-
 struct PixelsLine{
     bool *data;
     int size;
@@ -96,6 +100,7 @@ public:
     void    reset();
     
     void    setControlParameter(uint8_t heatingDots=20, uint8_t heatingTime=200, uint8_t heatingInterval=250);
+	void	setSetFlowcontrol(serial::flowcontrol_t flowcontrolType);
     void    setSleepTime(uint8_t seconds = 0);
     void    setStatus(bool state=true);
     void    setPrintDensity(uint8_t printDensity=14, uint8_t printBreakTime=4);
@@ -139,7 +144,7 @@ private:
     
     vector< vector<bool> > buffer;
     
-    SharedSerial    port;
+	shared_ptr<serial::Serial>    port;
     
     bool    bPrinting;
     bool    bConnected;

@@ -7,13 +7,13 @@ ofxThermalPrinter::ofxThermalPrinter(){
 
 bool ofxThermalPrinter::open(const std::string& portName){
     try {
-        port = SharedSerial(new serial::Serial( portName,
-                                               BAUDRATE,
-                                               serial::Timeout::simpleTimeout(1000),
-                                               serial::eightbits,
-                                               serial::parity_none,
-                                               serial::stopbits_one,
-                                               serial::flowcontrol_none ));
+		port = std::make_shared<serial::Serial>(portName,
+			BAUDRATE,
+			serial::Timeout::simpleTimeout(1000),
+			serial::eightbits,
+			serial::parity_none,
+			serial::stopbits_one,
+			serial::flowcontrol_none);
     }
     
     catch (const std::exception& exc){
@@ -23,52 +23,111 @@ bool ofxThermalPrinter::open(const std::string& portName){
     }
     
     bConnected = true;
-    usleep(50000);
+	this_thread::sleep_for(chrono::microseconds(50000));
     reset();
-    usleep(50000);
+	this_thread::sleep_for(chrono::microseconds(50000));
     
-    setControlParameter();
-    setPrintDensity();
-    setStatus(true);
-    
-    port->flushOutput();
-    
-    setReverse(true);
-    println("Reverse ON");
-    setReverse(false);
-    
+
+	// These values (including printDensity and printBreaktime) are taken from
+	// lazyatom's Adafruit-Thermal-Library branch and seem to work nicely with bitmap
+	// images. Changes here can cause symptoms like images printing out as random text.
+	// Play freely, but remember the working values.
+	// https://github.com/adafruit/Adafruit-Thermal-Printer-Library/blob/0cc508a9566240e5e5bac0fa28714722875cae69/Thermal.cpp
+
+
+	// from adafruit library on github
+	// ESC 7 n1 n2 n3 Setting Control Parameter Command
+	// n1 = "max heating dots" 0-255 -- max number of thermal print head
+	//      elements that will fire simultaneously.  Units = 8 dots (minus 1).
+	//      Printer default is 7 (64 dots, or 1/6 of 384-dot width), this code
+	//      sets it to 11 (96 dots, or 1/4 of width).
+	// n2 = "heating time" 3-255 -- duration that heating dots are fired.
+	//      Units = 10 us.  Printer default is 80 (800 us), this code sets it
+	//      to value passed (default 120, or 1.2 ms -- a little longer than
+	//      the default because we've increased the max heating dots).
+	// n3 = "heating interval" 0-255 -- recovery time between groups of
+	//      heating dots on line; possibly a function of power supply.
+	//      Units = 10 us.  Printer default is 2 (20 us), this code sets it
+	//      to 40 (throttled back due to 2A supply).
+	// More heating dots = more peak current, but faster printing speed.
+	// More heating time = darker print, but slower printing speed and
+	// possibly paper 'stiction'.  More heating interval = clearer print,
+	// but slower printing speed.
+
+
+	// Set "max heating dots", "heating time", "heating interval"
+	//heatTime = 120; //80 is default from page 23 of datasheet. Controls speed of printing and darkness
+	//heatInterval = 50; //2 is default from page 23 of datasheet. Controls speed of printing and darkness
+	// n1 = 0-255 Max printing dots, Unit (8dots), Default: 7 (64 dots)
+	// n2 = 3-255 Heating time, Unit (10us), Default: 80 (800us)
+	// n3 = 0-255 Heating interval, Unit (10us), Default: 2 (20us)
+	// The more max heating dots, the more peak current will cost
+	// when printing, the faster printing speed. The max heating
+	// dots is 8*(n1+1). The more heating time, the more density,
+	// but the slower printing speed. If heating time is too short,
+	// blank page may occur. The more heating interval, the more
+	// clear, but the slower printing speed.
+	//setControlParameter(7, 80, 2);
+	//setControlParameter(7, 140, 20); // pas mal !
+	//setControlParameter(11, 120, 4);
+	setControlParameter(7, 160, 0);
+
+
+	// from adafruit library on github
+	//#define printDensity   10 // 100% (? can go higher, text is darker but fuzzy)
+	//#define printBreakTime  2 // 500 uS
+
+	// (printDensity, printBreakTime)
+	//printDensity = 15; //Not sure what the defaut is. Testing shows the max helps darken text. From page 23.
+	//printBreakTime = 15; //Not sure what the defaut is. Testing shows the max helps darken text. From page 23.
+	// Description of print density from page 23 of the manual:
+	// DC2 # n Set printing density
+	// Decimal: 18 35 n
+	// D4..D0 of n is used to set the printing density.
+	// Density is 50% + 5% * n(D4-D0) printing density.
+	// D7..D5 of n is used to set the printing break time.
+	// Break time is n(D7-D5)*250us.
+	// (Unsure of the default value for either -- not documented)
+	//setPrintDensity(14, 4);
+	setPrintDensity(14, 4);
+
+	setStatus(true);
+
+	//port->flushOutput(); // will crash on Windows...
+	port->flush();
+
     return bConnected;
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a){
     if(bConnected){
         port->write(&_a, 1);
-        usleep(BYTE_TIME);
+		this_thread::sleep_for(chrono::microseconds(BYTE_TIME));
     }
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a,const uint8_t &_b ){
     const uint8_t command[2] = { _a, _b };
     write(command, 2);
-    usleep(BYTE_TIME*2);
+	this_thread::sleep_for(chrono::microseconds(BYTE_TIME*2));
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a, const uint8_t &_b, const uint8_t &_c ){
     const uint8_t command[3] = { _a, _b, _c };
     write(command, 3);
-    usleep(BYTE_TIME*3);
+	this_thread::sleep_for(chrono::microseconds(BYTE_TIME*3));
 }
 
 void ofxThermalPrinter::write(const uint8_t &_a, const uint8_t &_b, const uint8_t &_c, const uint8_t &_d){
     const uint8_t command[4] = { _a, _b, _c, _b };
     write(command, 4);
-    usleep(BYTE_TIME*4);
+	this_thread::sleep_for(chrono::microseconds(BYTE_TIME*4));
 }
 
 void ofxThermalPrinter::write(const uint8_t *_array, int _size){
     if(bConnected){
         port->write(_array, _size);
-        usleep(BYTE_TIME*_size);
+		this_thread::sleep_for(chrono::microseconds(BYTE_TIME*_size));
     }
 }
 
@@ -94,6 +153,11 @@ void ofxThermalPrinter::setControlParameter(uint8_t heatingDots, uint8_t heating
     write(heatingDots);
     write(heatingTime);
     write(heatingInterval);
+}
+
+// 
+void ofxThermalPrinter::setSetFlowcontrol(serial::flowcontrol_t flowcontrolType) {
+	port->setFlowcontrol(flowcontrolType);
 }
 
 // set sleep Time in seconds, time after last print the printer should stay awake
@@ -145,7 +209,7 @@ void ofxThermalPrinter::setAlign(AlignMode align) {
 
 // set how many blanks should be kept on the left side
 void ofxThermalPrinter::setLeftBlankCharNums(uint8_t space) {
-    if (space >= 47) space = 47;
+	ofClamp(space, 0, 47);
     write(27, 66, space);
 }
 
@@ -188,16 +252,14 @@ void ofxThermalPrinter::setBarcodeHeight(uint8_t height) {
 
 // sets the barcode line widths (only 2 or 3)
 void ofxThermalPrinter::setBarCodeWidth(uint8_t width) {
-    if (width <= 2) width=2;
-    else if (width >= 3) width=3;
-    
+    ofClamp(width, 2, 3);
     write(29, 119, width);
 }
 
 void ofxThermalPrinter::print(const std::string& text){
     if(bConnected){
         port->write(text);
-        usleep(BYTE_TIME*text.size());
+		this_thread::sleep_for(chrono::microseconds(BYTE_TIME*text.size()));
     }
 }
 
@@ -211,13 +273,13 @@ void ofxThermalPrinter::printBarcode(const std::string &data, BarcodeType type) 
     if(bConnected){
         write(29, 107, type);
         port->write(data);
-        usleep(BYTE_TIME*data.size());
+		this_thread::sleep_for(chrono::microseconds(BYTE_TIME*data.size()));
         write(0);
     }
 }
 
 void ofxThermalPrinter::print(ofBaseHasPixels &_img, int _threshold){
-    print(_img.getPixelsRef(),_threshold);
+    print(_img.getPixels(),_threshold);
 }
 
 void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
@@ -243,8 +305,7 @@ void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
             
             // Brightness correction curve:
             brightTemp =  sqrt(255) * sqrt (brightTemp);
-            if (brightTemp > 255) brightTemp = 255;
-            if (brightTemp < 0) brightTemp = 0;
+            ofClamp(brightTemp, 0, 255);
             
             int darkness = 255 - floor(brightTemp);
             
@@ -263,7 +324,7 @@ void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
             // Atkinson dithering algorithm:  http://verlagmartinkoch.at/software/dither/index.html
             // Distribute error as follows:
             //     [ ]  1/8  1/8
-            //1/8  1/8  1/8
+            //     1/8  1/8  1/8
             //     1/8
             
             if ((idx + 1) < GrayArrayLength)
@@ -281,7 +342,6 @@ void ofxThermalPrinter::print(ofPixels &_pixels, int _threshold){
         }
         addToBuffer(data);
     }
-    
     delete []GrayArray;
 }
 
@@ -316,32 +376,28 @@ void ofxThermalPrinter::threadedFunction(){
 
 void ofxThermalPrinter::printPixelRow(vector<bool> _line){
     if(bConnected){
-        int width = _line.size();
-        if(width>384)
-            width = 384;
+        int width = CLAMP(_line.size(),0,384);
         
         int rowBytes        = (width + 7) / 8;                 // Round up to next byte boundary
         int rowBytesClipped = (rowBytes >= 48) ? 48 : rowBytes; // 384 pixels max width
         
-        uint8_t data[rowBytesClipped];
-        memset(data,0x00,rowBytesClipped);
-        
+		uint8_t* data = new uint8_t[rowBytesClipped];
+		std::fill(data, data + rowBytesClipped, 0);
+
         for (int i = 0; i < width; i++) {
             uint8_t bit = 0x00;
             if (_line[i]){
                 bit = 0x01;
             }
-            data[i/8] += (bit&0x01)<<(7-i%8);
+				data[i/8] += (bit&0x01)<<(7-i%8);
         }
-        
-        const uint8_t command[4] = {18, 42, 1, rowBytesClipped};
+
+        const uint8_t command[4] = {18, 42, 1, static_cast<uint8_t>(rowBytesClipped)};
         port->write(command, 4);
-        usleep(BYTE_TIME*4);
+		
+		this_thread::sleep_for(chrono::microseconds(BYTE_TIME*4));
         
         port->write(data,rowBytesClipped);
-        usleep(BYTE_TIME*rowBytesClipped);
+		this_thread::sleep_for(chrono::microseconds(BYTE_TIME*rowBytesClipped));
     }
 }
-
-
-
