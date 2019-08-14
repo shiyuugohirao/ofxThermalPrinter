@@ -17,7 +17,7 @@ void ofApp::setup(){
     string portName = "COM3";
     if(printer.open(portName)){
         cout << "--- port open!"<<endl;
-        printer.setSetFlowcontrol(serial::flowcontrol_software);
+        printer.setFlowcontrol(serial::flowcontrol_software);
 
         img.load("logo.jpg");
         video.initGrabber(640, 480);

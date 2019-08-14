@@ -156,7 +156,7 @@ void ofxThermalPrinter::setControlParameter(uint8_t heatingDots, uint8_t heating
 }
 
 // 
-void ofxThermalPrinter::setSetFlowcontrol(serial::flowcontrol_t flowcontrolType) {
+void ofxThermalPrinter::setFlowcontrol(serial::flowcontrol_t flowcontrolType) {
 	port->setFlowcontrol(flowcontrolType);
 }
 

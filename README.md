@@ -1,3 +1,23 @@
+## this is fork repository!   
+original src is <https://github.com/martialgallorini/ofxThermalPrinter>  
+
+refference fork  
+- <https://github.com/sunekastbjerg/ofxThermalPrinter>  
+- <https://github.com/icq4ever/ofxThermalPrinter>  
+  
+#### update
+- cross-platform(tested on Win,Mac on oF0.10.1)
+- you can speed up printing on BAUDRATE 115200 using flowcontrol.  
+
+#### how to speed up  
+1. download `update_firmware.zip`  
+<https://learn.adafruit.com/mini-thermal-receipt-printer/downloads>
+2. change PARA BAUDRATE 115200 with `AClassTool.exe`.
+3. add `setFlowcontrol(serial::flowcontrol_software);` in setup().  
+the bellow is original readme...
+
+---
+
 [![Adafruit Mini Thermal Printer](http://www.adafruit.com/images/970x728/597-00.jpg)](http://www.adafruit.com/products/597)
 
 [This openFrameworks addon](https://github.com/patriciogonzalezvivo/ofxThermalPrinter) let you connect Adafruit's Mini Thermal Printer to any of your [openFrameworks](http://www.openframeworks.cc/) projects.

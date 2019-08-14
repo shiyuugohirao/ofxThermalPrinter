@@ -100,7 +100,7 @@ public:
     void    reset();
     
     void    setControlParameter(uint8_t heatingDots=20, uint8_t heatingTime=200, uint8_t heatingInterval=250);
-	void	setSetFlowcontrol(serial::flowcontrol_t flowcontrolType);
+	void	setFlowcontrol(serial::flowcontrol_t flowcontrolType);
     void    setSleepTime(uint8_t seconds = 0);
     void    setStatus(bool state=true);
     void    setPrintDensity(uint8_t printDensity=14, uint8_t printBreakTime=4);
