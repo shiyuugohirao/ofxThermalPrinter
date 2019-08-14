@@ -4,19 +4,30 @@
 void ofApp::setup(){
 	ofSetVerticalSync(true);
 	ofSetLogLevel(OF_LOG_VERBOSE);
+
+    // You can check port with serial::list_ports()
 	auto ports = serial::list_ports();
 	for (auto p: ports) {
-		cout<<"PORT : "<<p.port << endl;
+		cout<<"-"<<endl;
 		cout << "PORT        : " << p.port << endl;
 		cout << "HardwareID  : " << p.hardware_id << endl;
 		cout << "Description : " << p.description << endl;
 	}
 
-	cout << "portOpen : " << printer.open("COM3") << endl;	// ex) on Windows
-	printer.setSetFlowcontrol(serial::flowcontrol_software);
-    
-    img.loadImage("logo.jpg");
-    video.initGrabber(640, 480);
+    string portName = "COM3";
+    if(printer.open(portName)){
+        cout << "--- port open!"<<endl;
+        printer.setSetFlowcontrol(serial::flowcontrol_software);
+
+        img.load("logo.jpg");
+        video.initGrabber(640, 480);
+    }else{
+        cout << "~~~ port not open..."<<endl;
+        ofSystemAlertDialog("not found port...\n"
+                            "check console and set correct PORT.\n"
+                            "You must connect ThermalPrinter");
+        ofExit();
+    }
 }
 
 //--------------------------------------------------------------
@@ -40,6 +51,10 @@ void ofApp::keyPressed  (int key){
         printer.print(video);
     } else if (key == 't'){
         printer.println("Hello World!!");
+    } else if (key == 'f'){
+        printer.feed();
+    } else if (key == 'F'){
+        printer.feed(3);
     } else if (key == 'r'){
         printer.setReverse(true);
         printer.println("Reverse ON");
