@@ -131,6 +131,9 @@ public:
     
     void    printBarcode(const std::string &data, BarcodeType type=UPCA);
     void    printPixelRow( vector<bool> _row );
+
+    static vector<serial::PortInfo> list_ports();
+
     
 private:
     void    write(const uint8_t &_a);

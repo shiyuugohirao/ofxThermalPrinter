@@ -1,5 +1,16 @@
 #include "ofxThermalPrinter.h"
 
+vector<serial::PortInfo> ofxThermalPrinter::list_ports(){
+    vector<serial::PortInfo> ports = serial::list_ports();
+    for (auto p: ports) {
+        cout<<"-"<<endl;
+        cout << "PORT        : " << p.port << endl;
+        cout << "HardwareID  : " << p.hardware_id << endl;
+        cout << "Description : " << p.description << endl;
+    }
+    return ports;
+}
+
 ofxThermalPrinter::ofxThermalPrinter(){
     bConnected = false;
     bPrinting = false;
