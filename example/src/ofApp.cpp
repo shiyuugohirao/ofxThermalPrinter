@@ -48,7 +48,11 @@ void ofApp::exit(){
 //--------------------------------------------------------------
 void ofApp::keyPressed  (int key){ 
 	if(key == ' '){
-        printer.print(video);
+//        printer.print(video);
+        ofPixels pix = video.getPixels();
+        pix.resize(512, 384);
+        pix.rotate90(1);
+        printer.print(pix);
     } else if (key == 't'){
         printer.println("Hello World!!");
     } else if (key == 'f'){
